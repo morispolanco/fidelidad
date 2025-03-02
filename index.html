@@ -165,6 +165,24 @@
                 <!-- Contenido dinámico -->
             </div>
             
+            <div id="ai-analysis-container" class="mt-4 mb-6">
+                <button id="get-ai-analysis-btn" class="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold mb-4">
+                    Obtener análisis detallado
+                </button>
+                
+                <div id="ai-loading" class="hidden">
+                    <div class="flex items-center justify-center py-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <span class="ml-2 text-sm">Analizando respuestas...</span>
+                    </div>
+                </div>
+                
+                <div id="ai-analysis-result" class="p-4 rounded-lg bg-indigo-100 dark:bg-indigo-900 hidden">
+                    <h3 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">Análisis personalizado:</h3>
+                    <div id="ai-content" class="text-indigo-700 dark:text-indigo-300 text-sm whitespace-pre-wrap"></div>
+                </div>
+            </div>
+            
             <div class="p-4 rounded-lg bg-blue-100 dark:bg-blue-900 mb-6">
                 <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Consejo importante:</h3>
                 <p class="text-blue-700 dark:text-blue-300 text-sm">Recuerda que este cuestionario no proporciona evidencia real. La mejor manera de resolver dudas en una relación es a través de una comunicación abierta y honesta con tu pareja. Si tienes preocupaciones serias, considera buscar ayuda profesional como terapia de pareja.</p>
@@ -183,6 +201,7 @@
             
             const startBtn = document.getElementById('start-btn');
             const restartBtn = document.getElementById('restart-btn');
+            const getAiAnalysisBtn = document.getElementById('get-ai-analysis-btn');
             
             const questionNumber = document.getElementById('question-number');
             const questionText = document.getElementById('question-text');
@@ -190,6 +209,15 @@
             const scoreDisplay = document.getElementById('score-display');
             const resultProgress = document.getElementById('result-progress');
             const interpretation = document.getElementById('interpretation');
+            const aiLoading = document.getElementById('ai-loading');
+            const aiAnalysisResult = document.getElementById('ai-analysis-result');
+            const aiContent = document.getElementById('ai-content');
+            
+            // Manejador para respuestas de la IA
+            const aiHandlerId = 'relationship-analysis-handler';
+            
+            // Para almacenar las respuestas seleccionadas por el usuario
+            let userResponses = [];
             
             // Lista de preguntas
             const questions = [
@@ -299,9 +327,40 @@
             restartBtn.addEventListener('click', function() {
                 resultsScreen.classList.add('hidden');
                 startScreen.classList.remove('hidden');
+                
+                // Reiniciar todas las variables
                 currentQuestion = 0;
                 score = 0;
+                userResponses = [];
                 scoreDisplay.textContent = 'Puntuación: 0';
+                
+                // Reiniciar elementos de UI
+                getAiAnalysisBtn.classList.remove('hidden');
+                aiAnalysisResult.classList.add('hidden');
+                aiLoading.classList.add('hidden');
+                aiContent.innerHTML = '';
+            });
+            
+            // Registrar el manejador para las respuestas de la IA
+            window.Poe.registerHandler(aiHandlerId, function(result) {
+                // Ocultar el indicador de carga
+                aiLoading.classList.add('hidden');
+                
+                // Verificar si tenemos respuestas
+                if (result.responses && result.responses.length > 0) {
+                    const response = result.responses[0];
+                    
+                    // Mostrar el análisis de la IA
+                    aiContent.innerHTML = response.content;
+                    aiAnalysisResult.classList.remove('hidden');
+                    
+                    // Ocultar el botón después de mostrar el análisis
+                    getAiAnalysisBtn.classList.add('hidden');
+                } else {
+                    // Manejar caso de error
+                    aiContent.innerHTML = "Lo sentimos, no pudimos generar un análisis. Por favor, intenta de nuevo.";
+                    aiAnalysisResult.classList.remove('hidden');
+                }
             });
             
             // Mostrar la pregunta actual
@@ -321,6 +380,14 @@
                     optionButtons[i].onclick = function() {
                         const value = parseInt(this.dataset.value);
                         score += value;
+                        
+                        // Guardar la respuesta seleccionada
+                        userResponses.push({
+                            question: questions[currentQuestion].text,
+                            answer: this.textContent,
+                            value: value
+                        });
+                        
                         scoreDisplay.textContent = `Puntuación: ${score}`;
                         nextQuestion();
                     };
@@ -376,6 +443,57 @@
                 }
                 
                 interpretation.innerHTML = interpretationText;
+                
+                // Configurar el botón para obtener análisis de IA
+                getAiAnalysisBtn.addEventListener('click', getAIAnalysis);
+            }
+            
+            // Función para obtener análisis de IA
+            async function getAIAnalysis() {
+                try {
+                    // Ocultar el botón y mostrar indicador de carga
+                    getAiAnalysisBtn.classList.add('hidden');
+                    aiLoading.classList.remove('hidden');
+                    
+                    // Preparar el prompt para Claude
+                    const promptData = {
+                        score: score,
+                        totalPossible: 30,
+                        percentage: Math.round((score / 30) * 100),
+                        responses: userResponses
+                    };
+                    
+                    const prompt = `@Claude-3.7-Sonnet Eres un asesor de relaciones profesional. Te estoy proporcionando los resultados de un cuestionario sobre comportamientos en una relación. El usuario ha respondido preguntas sobre comportamientos potencialmente inusuales de su pareja.
+
+Datos del cuestionario:
+- Puntuación total: ${promptData.score} de ${promptData.totalPossible} (${promptData.percentage}%)
+- Respuestas específicas:
+${promptData.responses.map(r => `- Pregunta: "${r.question}"
+  Respuesta: "${r.answer}" (Valor: ${r.value}/3)`).join('\n')}
+
+Por favor, proporciona un análisis detallado y matizado que:
+1. Interprete estos resultados sin ser alarmista
+2. Explique posibles explicaciones alternativas para estos comportamientos
+3. Ofrezca consejos prácticos para mejorar la comunicación
+4. Mencione cuándo podría ser recomendable buscar ayuda profesional
+
+No menciones que este análisis es simplificado o que hay información insuficiente. Trabaja con lo que tienes. Usa un tono comprensivo pero objetivo. Máximo 300 palabras. Estructura tu respuesta con párrafos y subtítulos para facilitar la lectura.`;
+
+                    // Enviar el mensaje a Claude
+                    await window.Poe.sendUserMessage(prompt, {
+                        handler: aiHandlerId,
+                        stream: true,
+                        openChat: false
+                    });
+                    
+                } catch (error) {
+                    // Manejar errores
+                    aiLoading.classList.add('hidden');
+                    getAiAnalysisBtn.classList.remove('hidden');
+                    
+                    aiContent.innerHTML = "Error al obtener el análisis: " + error.message;
+                    aiAnalysisResult.classList.remove('hidden');
+                }
             }
         });
     </script>
