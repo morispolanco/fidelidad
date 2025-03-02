@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario de Relaciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilos para modo claro/oscuro */
+        :root {
+            --bg-primary: #ffffff;
+            --text-primary: #333333;
+            --primary-color: #5D5CDE;
+            --primary-hover: #4b4ab2;
+            --card-bg: #f8f8f8;
+            --border-color: #e2e2e2;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #181818;
+                --text-primary: #e4e4e4;
+                --primary-color: #5D5CDE;
+                --primary-hover: #7170e7;
+                --card-bg: #252525;
+                --border-color: #3d3d3d;
+            }
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+        
+        progress {
+            height: 8px;
+            width: 100%;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        progress::-webkit-progress-bar {
+            background-color: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        progress::-webkit-progress-value {
+            background-color: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        .result-bar {
+            height: 24px;
+            border-radius: 12px;
+            background-color: var(--border-color);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .result-progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 1s ease-in-out;
+        }
+        
+        .option-btn {
+            transition: transform 0.2s;
+        }
+        
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md">
+        <!-- Pantalla de inicio -->
+        <div id="start-screen" class="card p-6 fade-in">
+            <h1 class="text-2xl font-bold text-center mb-6">Cuestionario sobre Comportamientos en la Relación</h1>
+            <div class="my-4 text-sm">
+                <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg mb-4">
+                    <p class="font-semibold text-yellow-800 dark:text-yellow-200">Aviso importante:</p>
+                    <p class="text-yellow-700 dark:text-yellow-300">Este cuestionario es solamente para entretenimiento y no proporciona evidencia real sobre infidelidad. Las relaciones son complejas y requieren comunicación honesta, no acusaciones basadas en un cuestionario.</p>
+                </div>
+                <p class="mb-2">Este cuestionario te presentará una serie de preguntas sobre comportamientos y situaciones en tu relación.</p>
+                <p>Al finalizar, recibirás una interpretación de tus respuestas, pero recuerda que lo más importante es la comunicación honesta con tu pareja.</p>
+            </div>
+            <button id="start-btn" class="w-full py-3 rounded-lg btn-primary mt-4 font-semibold">Comenzar cuestionario</button>
+        </div>
+
+        <!-- Pantalla de preguntas -->
+        <div id="question-screen" class="card p-6 hidden fade-in">
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <p id="question-number" class="text-sm font-medium">Pregunta 1 de 10</p>
+                    <p id="score-display" class="text-sm font-medium">Puntuación: 0</p>
+                </div>
+                <progress id="progress-bar" value="1" max="10"></progress>
+            </div>
+            
+            <h2 id="question-text" class="text-xl font-semibold mb-6">¿Ha cambiado notablemente su rutina sin explicación?</h2>
+            
+            <div class="space-y-3">
+                <button class="option-btn w-full py-3 text-left px-4 rounded-lg btn-secondary" data-value="3">Sí, completamente y no explica por qué</button>
+                <button class="option-btn w-full py-3 text-left px-4 rounded-lg btn-secondary" data-value="2">Ha habido algunos cambios sin explicación clara</button>
+                <button class="option-btn w-full py-3 text-left px-4 rounded-lg btn-secondary" data-value="1">Pequeños cambios pero justificados</button>
+                <button class="option-btn w-full py-3 text-left px-4 rounded-lg btn-secondary" data-value="0">No, mantiene las mismas rutinas de siempre</button>
+            </div>
+        </div>
+
+        <!-- Pantalla de resultados -->
+        <div id="results-screen" class="card p-6 hidden fade-in">
+            <h2 class="text-2xl font-bold text-center mb-6">Resultados del Cuestionario</h2>
+            
+            <div class="mb-6">
+                <p class="text-center mb-2">Índice de comportamientos inusuales:</p>
+                <div class="result-bar mb-1">
+                    <div id="result-progress" class="result-progress" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span>Bajo</span>
+                    <span>Medio</span>
+                    <span>Alto</span>
+                </div>
+            </div>
+            
+            <div id="interpretation" class="p-4 rounded-lg bg-opacity-10 bg-gray-200 dark:bg-gray-700 mb-6">
+                <!-- Contenido dinámico -->
+            </div>
+            
+            <div class="p-4 rounded-lg bg-blue-100 dark:bg-blue-900 mb-6">
+                <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Consejo importante:</h3>
+                <p class="text-blue-700 dark:text-blue-300 text-sm">Recuerda que este cuestionario no proporciona evidencia real. La mejor manera de resolver dudas en una relación es a través de una comunicación abierta y honesta con tu pareja. Si tienes preocupaciones serias, considera buscar ayuda profesional como terapia de pareja.</p>
+            </div>
+            
+            <button id="restart-btn" class="w-full py-3 rounded-lg btn-primary mt-2 font-semibold">Reiniciar cuestionario</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos de la interfaz
+            const startScreen = document.getElementById('start-screen');
+            const questionScreen = document.getElementById('question-screen');
+            const resultsScreen = document.getElementById('results-screen');
+            
+            const startBtn = document.getElementById('start-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            
+            const questionNumber = document.getElementById('question-number');
+            const questionText = document.getElementById('question-text');
+            const progressBar = document.getElementById('progress-bar');
+            const scoreDisplay = document.getElementById('score-display');
+            const resultProgress = document.getElementById('result-progress');
+            const interpretation = document.getElementById('interpretation');
+            
+            // Lista de preguntas
+            const questions = [
+                {
+                    text: "¿Ha cambiado notablemente su rutina sin explicación?",
+                    options: [
+                        { text: "Sí, completamente y no explica por qué", value: 3 },
+                        { text: "Ha habido algunos cambios sin explicación clara", value: 2 },
+                        { text: "Pequeños cambios pero justificados", value: 1 },
+                        { text: "No, mantiene las mismas rutinas de siempre", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Ha aumentado su preocupación por su apariencia física recientemente?",
+                    options: [
+                        { text: "Sí, de manera extrema y repentina", value: 3 },
+                        { text: "Ha habido un cambio notable", value: 2 },
+                        { text: "Ligero aumento en su interés", value: 1 },
+                        { text: "No, se mantiene como siempre", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Protege excesivamente su teléfono móvil o computadora?",
+                    options: [
+                        { text: "Sí, nunca lo deja a la vista y cambió contraseñas", value: 3 },
+                        { text: "Es más reservada que antes con sus dispositivos", value: 2 },
+                        { text: "A veces parece un poco protectora", value: 1 },
+                        { text: "No, usa sus dispositivos normalmente", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Ha habido cambios en su interés sexual contigo?",
+                    options: [
+                        { text: "Disminuyó drásticamente sin explicación", value: 3 },
+                        { text: "Ha habido una disminución notable", value: 2 },
+                        { text: "Ligeros cambios pero explicables", value: 1 },
+                        { text: "No, se mantiene igual que siempre", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Hay períodos de tiempo donde no puedes contactarla?",
+                    options: [
+                        { text: "Sí, frecuentemente y sin explicaciones convincentes", value: 3 },
+                        { text: "Ocasionalmente está inaccesible sin buenas explicaciones", value: 2 },
+                        { text: "A veces, pero con razones justificables", value: 1 },
+                        { text: "No, generalmente está disponible o explica bien sus ausencias", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Ha habido un cambio en cómo habla de su futuro juntos?",
+                    options: [
+                        { text: "Sí, evita hablar del futuro o excluye planes contigo", value: 3 },
+                        { text: "Muestra menos entusiasmo sobre planes futuros", value: 2 },
+                        { text: "Pequeños cambios pero nada preocupante", value: 1 },
+                        { text: "No, sigue comprometida con el futuro juntos", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Menciona a alguna persona con frecuencia inusual?",
+                    options: [
+                        { text: "Sí, habla constantemente de alguien nuevo", value: 3 },
+                        { text: "Hay alguien que menciona más de lo normal", value: 2 },
+                        { text: "Ocasionalmente menciona a alguien nuevo", value: 1 },
+                        { text: "No, no hay menciones inusuales", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Te acusa a ti de infidelidad sin motivo?",
+                    options: [
+                        { text: "Sí, constantemente y sin ninguna base", value: 3 },
+                        { text: "Ha hecho algunas acusaciones injustificadas", value: 2 },
+                        { text: "Ocasionalmente muestra celos sin fundamento", value: 1 },
+                        { text: "No, nunca me acusa sin razón", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Ha cambiado su comportamiento financiero?",
+                    options: [
+                        { text: "Sí, hay gastos inexplicables y secretismo", value: 3 },
+                        { text: "Hay algunos gastos que no explica bien", value: 2 },
+                        { text: "Pequeños cambios pero justificados", value: 1 },
+                        { text: "No, todo sigue igual en ese aspecto", value: 0 }
+                    ]
+                },
+                {
+                    text: "¿Cómo reacciona cuando le preguntas sobre estos cambios?",
+                    options: [
+                        { text: "Se enfada mucho o se pone muy defensiva", value: 3 },
+                        { text: "Evita la conversación o cambia de tema", value: 2 },
+                        { text: "Da explicaciones, pero no del todo convincentes", value: 1 },
+                        { text: "Explica todo con claridad y tranquilidad", value: 0 }
+                    ]
+                }
+            ];
+            
+            let currentQuestion = 0;
+            let score = 0;
+            
+            // Iniciar el cuestionario
+            startBtn.addEventListener('click', function() {
+                startScreen.classList.add('hidden');
+                questionScreen.classList.remove('hidden');
+                displayQuestion();
+            });
+            
+            // Reiniciar el cuestionario
+            restartBtn.addEventListener('click', function() {
+                resultsScreen.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+                currentQuestion = 0;
+                score = 0;
+                scoreDisplay.textContent = 'Puntuación: 0';
+            });
+            
+            // Mostrar la pregunta actual
+            function displayQuestion() {
+                questionText.textContent = questions[currentQuestion].text;
+                questionNumber.textContent = `Pregunta ${currentQuestion + 1} de ${questions.length}`;
+                progressBar.value = currentQuestion + 1;
+                
+                // Limpiar opciones anteriores
+                const optionButtons = document.querySelectorAll('.option-btn');
+                for (let i = 0; i < optionButtons.length; i++) {
+                    const option = questions[currentQuestion].options[i];
+                    optionButtons[i].textContent = option.text;
+                    optionButtons[i].dataset.value = option.value;
+                    
+                    // Renovar listener de eventos (para evitar múltiples)
+                    optionButtons[i].onclick = function() {
+                        const value = parseInt(this.dataset.value);
+                        score += value;
+                        scoreDisplay.textContent = `Puntuación: ${score}`;
+                        nextQuestion();
+                    };
+                }
+            }
+            
+            // Pasar a la siguiente pregunta
+            function nextQuestion() {
+                currentQuestion++;
+                
+                if (currentQuestion < questions.length) {
+                    // Efecto de transición
+                    questionScreen.classList.remove('fade-in');
+                    setTimeout(() => {
+                        displayQuestion();
+                        questionScreen.classList.add('fade-in');
+                    }, 300);
+                } else {
+                    showResults();
+                }
+            }
+            
+            // Mostrar los resultados
+            function showResults() {
+                questionScreen.classList.add('hidden');
+                resultsScreen.classList.remove('hidden');
+                
+                // Calcular porcentaje (máximo posible es 30 puntos)
+                const percentage = (score / 30) * 100;
+                resultProgress.style.width = `${percentage}%`;
+                
+                // Interpretación basada en la puntuación
+                let interpretationText = '';
+                
+                if (score <= 5) {
+                    interpretationText = `
+                        <h3 class="font-semibold mb-2">Nivel bajo de comportamientos inusuales (${score}/30)</h3>
+                        <p class="text-sm">Según tus respuestas, hay muy pocos o ningún comportamiento que podría considerarse inusual. Las pequeñas variaciones son normales en cualquier relación y no indican necesariamente un problema.</p>
+                        <p class="text-sm mt-2">Consejo: Continúa manteniendo una comunicación abierta y honesta con tu pareja.</p>
+                    `;
+                } else if (score <= 15) {
+                    interpretationText = `
+                        <h3 class="font-semibold mb-2">Nivel medio de comportamientos inusuales (${score}/30)</h3>
+                        <p class="text-sm">Has identificado algunos comportamientos que han cambiado en tu relación. Estos cambios podrían tener múltiples explicaciones, no necesariamente relacionadas con infidelidad.</p>
+                        <p class="text-sm mt-2">Consejo: Considera tener una conversación tranquila con tu pareja sobre los cambios que has notado y cómo te hacen sentir.</p>
+                    `;
+                } else {
+                    interpretationText = `
+                        <h3 class="font-semibold mb-2">Nivel alto de comportamientos inusuales (${score}/30)</h3>
+                        <p class="text-sm">Has identificado varios comportamientos que han cambiado significativamente. Aunque estos podrían generar preocupación, recuerda que incluso múltiples cambios pueden tener explicaciones diferentes a la infidelidad.</p>
+                        <p class="text-sm mt-2">Consejo: Es importante abordar estas preocupaciones directamente con tu pareja en un ambiente tranquilo y no acusatorio. Considera también buscar ayuda profesional como terapia de pareja.</p>
+                    `;
+                }
+                
+                interpretation.innerHTML = interpretationText;
+            }
+        });
+    </script>
+</body>
+</html>
